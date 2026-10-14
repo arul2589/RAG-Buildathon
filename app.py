@@ -27,6 +27,9 @@ from pydantic import BaseModel, Field
 import streamlit as st
 from starlette.routing import Mount
 
+import asyncio
+from contextlib import asynccontextmanager
+
 
 # ---------------------------------------------------------------------------
 # Paths and settings
@@ -45,6 +48,9 @@ SOURCE_URL = "https://agritech.tnau.ac.in/expert_system/paddy/Schemes.html#sls"
 
 # Prefer this project's .env over any stale OPENAI_API_KEY set in Windows.
 load_dotenv(ROOT / ".env", override=True)
+
+
+
 
 
 # ---------------------------------------------------------------------------
@@ -252,6 +258,10 @@ class TNAURAG:
 
 @asynccontextmanager
 async def lifespan(application):
+    if not TEXT_PATH.exists() or not TEXT_PATH.read_text(encoding="utf-8").strip():
+        print("No saved TNAU text found. Scraping on first startup...")
+        await asyncio.to_thread(scrape_once, True)
+
     application.state.rag = TNAURAG()
     yield
     application.state.rag = None
